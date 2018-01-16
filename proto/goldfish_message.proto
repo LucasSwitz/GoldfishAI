@@ -1,0 +1,25 @@
+syntax="proto3";
+
+message StateMessage{
+
+}
+
+message RegistrationMessage{
+
+}
+
+message ManagementMessage{
+    sfixed32 extra = 1;
+}
+
+message GoldFishMessage{
+    enum Type{
+        STATE_UPDATE = 0;
+        REGISTRATION = 1;
+        MANAGMENT  = 2;
+    }
+    Type type = 1;
+    StateMessage state_message = 2;
+    RegistrationMessage registration_message = 3;
+    ManagementMessage management_message = 4;
+}
