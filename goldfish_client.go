@@ -2,56 +2,61 @@ package goldfish
 
 import (
 	"fmt"
-	"net"
-	"strconv"
+	"goldfish/proto"
+
+	"github.com/golang/protobuf/proto"
 )
 
-type Client struct {
-	port        int64
-	addrS       string
-	addr        *net.UDPAddr
-	conn        *net.UDPConn
-	readChan    chan []byte
-	controlChan chan int
+type GoldFishClient struct {
+	udpClient  *UDPClient
+	msgChannel chan goldfish_message.GoldFishMessage
 }
 
-func MakeClient(ip string, port int64) (c Client, err error) {
-	conAddr := ip + ":" + strconv.FormatInt(port, 10)
-	c.addr, err = net.ResolveUDPAddr("udp", conAddr)
-	c.readChan = make(chan []byte)
+func MakeClient(ip string, port int64) (c *GoldFishClient, err error) {
+	c = new(GoldFishClient)
+	c.udpClient, err = MakeUDPClient(ip, port)
+	c.msgChannel = make(chan goldfish_message.GoldFishMessage)
 	return c, err
 }
 
-func (c Client) Send(msg []byte, size int64) error {
-	n, err := c.conn.Write(msg)
-	fmt.Printf("Client sent %d bytes", n)
+func (c GoldFishClient) Send(msg goldfish_message.GoldFishMessage) error {
+	data, err := proto.Marshal(&msg)
+
+	if err != nil {
+		return err
+	}
+
+	err = c.udpClient.Write(data)
 	return err
 }
 
-func (c *Client) Connect() (err error) {
-	c.conn, err = net.DialUDP("udp", nil, c.addr)
-	go c.Listen()
-	return err
+func (c GoldFishClient) Dial() (err error) {
+	err = c.udpClient.Dial()
+
+	if err != nil {
+		return err
+	}
+
+	go c.listen()
+	return nil
 }
 
-func (c Client) Read() []byte {
-	return <-c.readChan
+func (c GoldFishClient) MessageChannel() chan goldfish_message.GoldFishMessage {
+	return c.msgChannel
 }
 
-func (c Client) Listen() error {
-	fmt.Printf("Starting client listening...")
+func (c GoldFishClient) listen() error {
 	for {
-		buffer := make([]byte, 1024)
-		n, _, err := c.conn.ReadFromUDP(buffer)
-		if err != nil {
-			return err
-		}
+		select {
+		case data := <-c.udpClient.readChan:
+			msg := &goldfish_message.GoldFishMessage{}
+			err := proto.Unmarshal(data, msg)
+			if err != nil {
+				fmt.Printf("%s \n", err.Error())
+			} else {
+				c.msgChannel <- *msg
+			}
 
-		if n == 0 {
-			fmt.Printf("No bytes read...")
-			return nil
 		}
-
-		c.readChan <- buffer
 	}
 }

@@ -1,6 +1,7 @@
 package goldfish
 
 import (
+	"goldfish/proto"
 	"sync"
 	"testing"
 	"time"
@@ -48,7 +49,7 @@ func TestGoldfishClientMake(t *testing.T) {
 
 func TestGoldfishClientConnect(t *testing.T) {
 	client, _ := MakeClient("127.0.0.1", 4443)
-	err := client.Connect()
+	err := client.Dial()
 
 	if err != nil {
 		t.Error(err)
@@ -56,13 +57,13 @@ func TestGoldfishClientConnect(t *testing.T) {
 	}
 }
 
-func TestGoldfishPing(t *testing.T) {
+func TestUDPPing(t *testing.T) {
 	var waitGroup sync.WaitGroup
 	server, _ := MakeUDPServer(4443)
-	client, _ := MakeClient("127.0.0.1", 4443)
+	client, _ := MakeUDPClient("127.0.0.1", 4443)
 	go server.Run()
 
-	err := client.Connect()
+	err := client.Dial()
 
 	if err != nil {
 		t.Error(err)
@@ -71,7 +72,7 @@ func TestGoldfishPing(t *testing.T) {
 
 	msg := []byte{30}
 
-	err = client.Send(msg, 1)
+	err = client.Write(msg)
 
 	if err != nil {
 		t.Error(err)
@@ -92,6 +93,51 @@ func TestGoldfishPing(t *testing.T) {
 	}()
 
 	SigOrTimeout(t, &c, time.Millisecond*10)
+}
+
+func TestGoldFishPing(t *testing.T) {
+	var waitGroup sync.WaitGroup
+	server, _ := MakeServer(4444)
+	client, _ := MakeClient("127.0.0.1", 4444)
+
+	go server.Run()
+
+	err := client.Dial()
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	msg := goldfish_message.GoldFishMessage{goldfish_message.GoldFishMessage_MANAGMENT, nil, nil, nil}
+
+	err = client.Send(msg)
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	c := make(chan struct{})
+
+	waitGroup.Add(1)
+	go func() {
+		msg := <-server.MessageChannel()
+
+		if msg.Type != goldfish_message.GoldFishMessage_MANAGMENT {
+			t.Error("Corrupt Message.")
+		}
+
+		waitGroup.Done()
+	}()
+
+	go func() {
+		defer close(c)
+		waitGroup.Wait()
+	}()
+
+	SigOrTimeout(t, &c, time.Millisecond*10)
+
 }
 
 func SigOrTimeout(t *testing.T, sig *chan struct{}, timeout time.Duration) {

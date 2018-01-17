@@ -22,7 +22,7 @@ func MakeServer(port int64) (server *GoldFishServer, err error) {
 }
 
 func (server GoldFishServer) Run() (err error) {
-	go server.Run()
+	go server.udpServer.Run()
 
 	for {
 		select {
