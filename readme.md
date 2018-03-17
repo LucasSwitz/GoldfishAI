@@ -1,5 +1,7 @@
 # MiniBot Platform
 
+![a](https://media.giphy.com/media/2wTByfHHZClCxKqfTN/giphy.gif)
+
 This repo is a test python implementation of MiniBot. Original repo can be found
 [here](http://github.com/cornell-cup/cs-minibot-platform). This is a refactored
 version.
@@ -93,4 +95,3 @@ Go to any browser on your computer and go to `localhost:1234/gui` to see the GUI
 If you are having trouble running the previous line, make sure that python3 is installed.
 You can check this by typing `python3` in your terminal.
 
-![a](https://media.giphy.com/media/2wTByfHHZClCxKqfTN/giphy.gif)
