@@ -93,4 +93,4 @@ Go to any browser on your computer and go to `localhost:1234/gui` to see the GUI
 If you are having trouble running the previous line, make sure that python3 is installed.
 You can check this by typing `python3` in your terminal.
 
-![](https://media.giphy.com/media/2wTByfHHZClCxKqfTN/giphy.gif)
+![a](https://media.giphy.com/media/2wTByfHHZClCxKqfTN/giphy.gif)
